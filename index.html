@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Online Compiler</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/material.min.css" />
+  <style>
+    body {font-family: Arial, sans-serif; margin: 20px;}
+    #editor {height:300px; border:1px solid #ccc;}
+    pre {background:#161616; color:#0f0; padding:10px;}
+    textarea {width:100%; height:100px;}
+    #topbar {display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+    .hidden {display:none;}
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <h1>Online Compiler</h1>
+    <button id="toggleTheme">🌞</button>
+  </div>
+
+  <label>Language: </label>
+  <select id="language">
+    <option value="python">Python 3.8</option>
+    <option value="c">C</option>
+    <option value="cpp">C++</option>
+    <option value="java">Java</option>
+    <option value="javascript">JavaScript</option>
+    <option value="php">PHP</option>
+    <option value="ruby">Ruby</option>
+    <option value="go">Go</option>
+    <option value="rust">Rust</option>
+    <option value="fortran">Fortran</option>
+  </select>
+  <button onclick="runCode()">Run</button>
+  <button onclick="saveCode()">💾 Save</button>
+  <button onclick="loadCode()">📂 Load</button>
+
+  <div id="editor"></div>
+
+  <h3>STDIN:</h3>
+  <textarea id="stdin"></textarea>
+
+  <h3>Output:</h3>
+  <pre id="output"></pre>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+  <script>
+    const editor = CodeMirror(document.getElementById('editor'), {
+      value: 'print("Hello from Online Compiler!")',
+      mode: "python",
+      lineNumbers: true,
+      theme: 'default'
+    });
+
+    const themeBtn = document.getElementById("toggleTheme");
+
+    function runCode(){
+      const lang = document.getElementById("language").value;
+      const code = editor.getValue();
+      const input = document.getElementById("stdin").value;
+
+      document.getElementById("output").textContent = "Running...";
+
+      fetch("https://emkc.org/api/v2/piston/execute",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          language:lang,
+          version:"",
+          stdin:input,
+          files:[{content:code}]
+        })
+      }).then(r=>r.json()).then(res=>{
+        document.getElementById("output").textContent = res.run.output || res.message;
+      });
+    }
+
+    function saveCode(){
+      localStorage.setItem("onlineCompilerCode", editor.getValue());
+      alert("Saved!");
+    }
+
+    function loadCode(){
+      const saved = localStorage.getItem("onlineCompilerCode");
+      if(saved){
+        editor.setValue(saved);
+      } else {
+        alert("No saved code!");
+      }
+    }
+
+    themeBtn.addEventListener("click",()=>{
+      if(editor.getOption("theme")==="default"){
+        editor.setOption("theme","material");
+        themeBtn.textContent="🌙";
+      }else{
+        editor.setOption("theme","default");
+        themeBtn.textContent="🌞";
+      }
+    });
+  </script>
+</body>
+</html>
